@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#102118">
+  <title>Dzikir Counter</title>
+  <style>
+    :root {
+      --bg-1: #29412f;
+      --bg-2: #14231b;
+      --bg-3: #0b120e;
+      --surface: rgba(255,255,255,.075);
+      --surface-strong: rgba(255,255,255,.105);
+      --surface-soft: rgba(255,255,255,.055);
+      --border: rgba(255,255,255,.12);
+      --border-soft: rgba(255,255,255,.08);
+      --text: #f4f7f3;
+      --muted: rgba(255,255,255,.58);
+      --muted-2: rgba(255,255,255,.42);
+      --accent: #9bd4a5;
+      --accent-strong: #83c990;
+      --button-text: #102016;
+      --danger: #ffb4a8;
+      --shadow: 0 24px 70px rgba(0,0,0,.35);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 50% 0%, var(--bg-1) 0%, var(--bg-2) 42%, var(--bg-3) 100%);
+      color: var(--text);
+      padding: max(16px, env(safe-area-inset-top))
+               max(16px, env(safe-area-inset-right))
+               max(16px, env(safe-area-inset-bottom))
+               max(16px, env(safe-area-inset-left));
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 10% 15%, rgba(155,212,165,.08), transparent 24%),
+        radial-gradient(circle at 90% 85%, rgba(132,180,145,.06), transparent 28%);
+    }
+
+    button, input { font: inherit; }
+    button { touch-action: manipulation; }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 32px;
+      background: rgba(255,255,255,.055);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      box-shadow: var(--shadow);
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .header h1 {
+      margin: 0 0 5px;
+      font-size: clamp(28px, 4vw, 38px);
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+    .header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .header-badge {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255,255,255,.055);
+      color: rgba(255,255,255,.75);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+      border: 1px solid var(--border-soft);
+      padding: 16px;
+    }
+
+    .panel-title {
+      margin: 0 0 13px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.6);
+    }
+
+    .category-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .category-tab {
+      min-height: 46px;
+      border: 1px solid var(--border-soft);
+      border-radius: 15px;
+      background: rgba(255,255,255,.045);
+      color: rgba(255,255,255,.72);
+      cursor: pointer;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .category-tab.active {
+      background: rgba(155,212,165,.14);
+      border-color: rgba(155,212,165,.35);
+      color: #dff5e2;
+    }
+
+    .dhikr-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .dhikr-option {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      border-radius: 17px;
+      padding: 12px 13px;
+      background: rgba(255,255,255,.035);
+      color: white;
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease, transform .12s ease;
+    }
+
+    .dhikr-option:hover {
+      background: rgba(255,255,255,.07);
+      border-color: rgba(255,255,255,.08);
+    }
+
+    .dhikr-option:active { transform: scale(.99); }
+
+    .dhikr-option.active {
+      background: rgba(155,212,165,.12);
+      border-color: rgba(155,212,165,.34);
+    }
+
+    .option-name {
+      display: block;
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .option-target {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+
+    .content {
+      min-width: 0;
+    }
+
+    .selected-title {
+      margin: 0 0 6px;
+      font-size: clamp(22px, 3vw, 30px);
+      line-height: 1.25;
+      letter-spacing: -.6px;
+    }
+
+    .selected-category {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .counter {
+      text-align: center;
+      padding: clamp(22px, 4vw, 34px) 18px;
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.055);
+      border: 1px solid var(--border-soft);
+      margin-bottom: 14px;
+    }
+
+    .label {
+      color: rgba(255,255,255,.55);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      margin-bottom: 8px;
+    }
+
+    #count {
+      font-size: clamp(64px, 10vw, 104px);
+      line-height: .95;
+      font-weight: 750;
+      letter-spacing: -5px;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    .target {
+      min-height: 20px;
+      margin-top: 13px;
+      color: rgba(255,255,255,.62);
+      font-size: 13px;
+    }
+
+    .target.done { color: #a8e8b1 !important; font-weight: 700; }
+
+    .progress {
+      height: 8px;
+      background: rgba(255,255,255,.1);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-top: 15px;
+    }
+
+    #bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #83c990, #b5e6bd);
+      border-radius: inherit;
+      transition: width .25s ease;
+    }
+
+    .progress.unlimited #bar { width: 100%; opacity: .35; }
+
+    .dhikr-btn {
+      width: 100%;
+      min-height: 112px;
+      border: none;
+      border-radius: 25px;
+      color: var(--button-text);
+      background: linear-gradient(145deg, #c6edcc, #83c990);
+      font-size: clamp(21px, 3vw, 27px);
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(85,160,100,.25), inset 0 1px rgba(255,255,255,.6);
+      transition: transform .12s ease, filter .2s ease;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .dhikr-btn:active { transform: scale(.975); filter: brightness(.92); }
+    .dhikr-btn:focus-visible,
+    .category-tab:focus-visible,
+    .dhikr-option:focus-visible,
+    .reset:focus-visible,
+    .danger:focus-visible,
+    .goal button:focus-visible {
+      outline: 2px solid #c6edcc;
+      outline-offset: 3px;
+    }
+
+    .hint {
+      text-align: center;
+      color: var(--muted-2);
+      font-size: 12px;
+      margin: 10px 0 14px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .reset,
+    .danger {
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 15px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.07);
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .danger { color: var(--danger); background: rgba(255,100,80,.055); }
+    .reset:active, .danger:active { transform: scale(.98); }
+
+    .goal {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 8px;
+    }
+
+    .goal input {
+      width: 100%;
+      min-width: 0;
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 15px;
+      border: 1px solid var(--border-soft);
+      background: rgba(0,0,0,.15);
+      color: white;
+      outline: none;
+    }
+
+    .goal input:disabled { opacity: .45; cursor: not-allowed; }
+
+    .goal button {
+      border: 0;
+      border-radius: 15px;
+      padding: 0 18px;
+      min-width: 72px;
+      min-height: 48px;
+      background: rgba(255,255,255,.16);
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .goal button:disabled { opacity: .45; cursor: not-allowed; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 12px;
+      border-radius: 15px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+      text-align: center;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted-2);
+      font-size: 10px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 900px) {
+      .app { padding: 20px; }
+      .layout { grid-template-columns: 1fr; }
+      .panel { padding: 14px; }
+      .dhikr-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .selected-title, .selected-category { text-align: center; }
+    }
+
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      .app { padding: 14px; border-radius: 24px; }
+      .header { align-items: flex-start; margin-bottom: 15px; }
+      .header-badge { display: none; }
+      .header h1 { font-size: 28px; }
+      .header p { font-size: 13px; }
+      .panel { border-radius: 22px; padding: 12px; }
+      .category-tabs { grid-template-columns: 1fr 1fr; }
+      .dhikr-list { grid-template-columns: 1fr; }
+      .counter { border-radius: 22px; padding: 22px 14px; }
+      #count { font-size: clamp(62px, 22vw, 92px); letter-spacing: -4px; }
+      .dhikr-btn { min-height: 96px; border-radius: 22px; }
+      .actions { grid-template-columns: 1fr 1fr; }
+      .goal { grid-template-columns: 1fr; }
+      .goal button { width: 100%; }
+      .stats { grid-template-columns: 1fr 1fr 1fr; }
+      .stat { padding: 10px 6px; }
+      .stat-value { font-size: 16px; }
+      .stat-label { font-size: 9px; }
+    }
+
+    @media (max-width: 360px) {
+      .app { padding: 11px; }
+      .category-tabs { grid-template-columns: 1fr; }
+      .actions { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div>
+        <h1>Dzikir Counter</h1>
+        <p>Hitung dzikirmu dengan sederhana</p>
+      </div>
+      <div class="header-badge">8 bacaan • 2 kategori</div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel" aria-label="Daftar dzikir">
+        <h2 class="panel-title">Pilih Dzikir</h2>
+        <div class="category-tabs" role="tablist" aria-label="Kategori dzikir">
+          <button class="category-tab active" id="cat1Btn" data-category="after-prayer" role="tab" aria-selected="true">Setelah Salat Fardu</button>
+          <button class="category-tab" id="cat2Btn" data-category="daily" role="tab" aria-selected="false">Zikir Harian</button>
+        </div>
+        <div class="dhikr-list" id="dhikrList"></div>
+      </aside>
+
+      <section class="content" aria-live="polite">
+        <h2 class="selected-title" id="selectedTitle">Subhanallah</h2>
+        <p class="selected-category" id="selectedCategory">Setelah Salat Fardu</p>
+
+        <section class="counter">
+          <div class="label">JUMLAH DZIKIR</div>
+          <div id="count">0</div>
+          <div id="targetText" class="target">Target 33 kali</div>
+          <div class="progress" id="progressWrap"><div id="bar"></div></div>
+        </section>
+
+        <button class="dhikr-btn" id="dhikrBtn" aria-label="Tambah satu hitungan dzikir">DZIKIR +1</button>
+        <div class="hint">Tekan tombol setiap selesai berdzikir • Spasi juga bisa digunakan di desktop</div>
+
+        <div class="actions">
+          <button class="reset" id="resetBtn">↺ Reset Dzikir Ini</button>
+          <button class="danger" id="resetAllBtn">Reset Semua Data</button>
+        </div>
+
+        <div class="goal">
+          <label class="sr-only" for="targetInput">Ubah target</label>
+          <input id="targetInput" type="number" min="1" inputmode="numeric" placeholder="Ubah target, mis. 99">
+          <button id="targetBtn">Set Target</button>
+        </div>
+
+        <div class="stats" aria-label="Ringkasan">
+          <div class="stat">
+            <span class="stat-value" id="statCurrent">0</span>
+            <span class="stat-label">Hitungan</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="statTarget">33</span>
+            <span class="stat-label">Target</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="statDone">0%</span>
+            <span class="stat-label">Progress</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const dhikrData = [
+      {
+        category: "after-prayer",
+        categoryLabel: "Setelah Salat Fardu",
+        items: [
+          { id: "subhanallah", name: "Subhanallah", defaultTarget: 33 },
+          { id: "alhamdulillah", name: "Alhamdulillah", defaultTarget: 33 },
+          { id: "allahu-akbar", name: "Allahu Akbar", defaultTarget: 33 },
+          { id: "laa-ilaaha-illallahu", name: "Laa ilaaha illallahu wahdahu laa syariikalah, lahul mulku wa lahul hamdu wa huwa 'alaa kulli syai-in qadiir", defaultTarget: 1 }
+        ]
+      },
+      {
+        category: "daily",
+        categoryLabel: "Zikir Harian (Pagi, Petang, atau Bebas)",
+        items: [
+          { id: "astaghfirullah", name: "Astaghfirullah", defaultTarget: 100 },
+          { id: "laa-ilaaha-illallah", name: "Laa ilaaha illallah", defaultTarget: 100 },
+          { id: "subhanallahi-wa-bihamdihi", name: "Subhanallahi wa bihamdihi", defaultTarget: 100 },
+          { id: "laa-haula", name: "Laa haula wa laa quwwata illaa billaah", defaultTarget: null }
+        ]
+      }
+    ];
+
+    const allItems = dhikrData.flatMap(group => group.items.map(item => ({ ...item, category: group.category, categoryLabel: group.categoryLabel })));
+
+    let activeCategory = localStorage.getItem("dzikirCategory") || "after-prayer";
+    let activeId = localStorage.getItem("dzikirActiveId") || "subhanallah";
+
+    const counts = JSON.parse(localStorage.getItem("dzikirCounts") || "{}");
+    const targets = JSON.parse(localStorage.getItem("dzikirTargets") || "{}");
+
+    allItems.forEach(item => {
+      if (!(item.id in counts)) counts[item.id] = 0;
+      if (!(item.id in targets)) targets[item.id] = item.defaultTarget;
+    });
+
+    const countEl = document.getElementById("count");
+    const barEl = document.getElementById("bar");
+    const progressWrap = document.getElementById("progressWrap");
+    const targetText = document.getElementById("targetText");
+    const selectedTitle = document.getElementById("selectedTitle");
+    const selectedCategory = document.getElementById("selectedCategory");
+    const targetInput = document.getElementById("targetInput");
+    const targetBtn = document.getElementById("targetBtn");
+    const statCurrent = document.getElementById("statCurrent");
+    const statTarget = document.getElementById("statTarget");
+    const statDone = document.getElementById("statDone");
+
+    function getItem(id = activeId) {
+      return allItems.find(item => item.id === id) || allItems[0];
+    }
+
+    function saveState() {
+      localStorage.setItem("dzikirCounts", JSON.stringify(counts));
+      localStorage.setItem("dzikirTargets", JSON.stringify(targets));
+      localStorage.setItem("dzikirCategory", activeCategory);
+      localStorage.setItem("dzikirActiveId", activeId);
+    }
+
+    function renderList() {
+      const group = dhikrData.find(g => g.category === activeCategory);
+      const listEl = document.getElementById("dhikrList");
+      listEl.innerHTML = "";
+
+      group.items.forEach(item => {
+        const button = document.createElement("button");
+        button.className = "dhikr-option" + (item.id === activeId ? " active" : "");
+        button.type = "button";
+        button.dataset.id = item.id;
+        button.setAttribute("aria-pressed", item.id === activeId ? "true" : "false");
+
+        const target = targets[item.id];
+        const targetLabel = target === null ? "Target: Bebas / Tanpa batas" : `Target: ${target} kali`;
+        button.innerHTML = `<span class="option-name">${item.name}</span><span class="option-target">${targetLabel} • ${counts[item.id]} hitungan</span>`;
+
+        button.addEventListener("click", () => selectDhikr(item.id));
+        listEl.appendChild(button);
+      });
+    }
+
+    function updateCategoryButtons() {
+      document.querySelectorAll(".category-tab").forEach(button => {
+        const active = button.dataset.category === activeCategory;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", String(active));
+      });
+    }
+
+    function selectDhikr(id) {
+      const item = getItem(id);
+      activeId = item.id;
+      activeCategory = item.category;
+      saveState();
+      updateCategoryButtons();
+      renderList();
+      render();
+    }
+
+    function render() {
+      const item = getItem();
+      const count = counts[item.id] || 0;
+      const target = targets[item.id];
+
+      selectedTitle.textContent = item.name;
+      selectedCategory.textContent = item.categoryLabel;
+      countEl.textContent = count;
+
+      progressWrap.classList.toggle("unlimited", target === null);
+
+      if (target === null) {
+        targetText.textContent = "Target Bebas / Tanpa batas";
+        targetText.classList.remove("done");
+        statTarget.textContent = "∞";
+        statDone.textContent = "—";
+        barEl.style.width = "100%";
+        targetInput.disabled = true;
+        targetBtn.disabled = true;
+        targetInput.placeholder = "Target bebas / tanpa batas";
+      } else {
+        const progress = Math.min((count / target) * 100, 100);
+        const completed = count >= target;
+        targetText.textContent = completed
+          ? `Target ${target} kali • Selesai ✓`
+          : `Target ${target} kali`;
+        targetText.classList.toggle("done", completed);
+        barEl.style.width = progress + "%";
+        statTarget.textContent = target;
+        statDone.textContent = Math.round(progress) + "%";
+        targetInput.disabled = false;
+        targetBtn.disabled = false;
+        targetInput.placeholder = "Ubah target, mis. 99";
+      }
+
+      statCurrent.textContent = count;
+      document.title = `${item.name} • Dzikir Counter`;
+      saveState();
+      renderList();
+    }
+
+    function increment() {
+      counts[activeId] = (counts[activeId] || 0) + 1;
+      if (navigator.vibrate) navigator.vibrate(20);
+      render();
+    }
+
+    function resetCurrent() {
+      counts[activeId] = 0;
+      render();
+    }
+
+    function resetAll() {
+      const confirmed = window.confirm("Reset semua hitungan dan target dzikir? Data yang tersimpan di perangkat ini akan dihapus.");
+      if (!confirmed) return;
+      allItems.forEach(item => {
+        counts[item.id] = 0;
+        targets[item.id] = item.defaultTarget;
+      });
+      render();
+    }
+
+    function setTarget() {
+      const item = getItem();
+      if (targets[item.id] === null) return;
+
+      const value = parseInt(targetInput.value, 10);
+      if (Number.isFinite(value) && value > 0) {
+        targets[item.id] = value;
+        targetInput.value = "";
+        targetInput.blur();
+        render();
+      } else {
+        targetInput.focus();
+        targetInput.value = "";
+        targetInput.placeholder = "Masukkan angka > 0";
+      }
+    }
+
+    document.querySelectorAll(".category-tab").forEach(button => {
+      button.addEventListener("click", () => {
+        activeCategory = button.dataset.category;
+        const group = dhikrData.find(g => g.category === activeCategory);
+        const existsInCategory = group.items.some(item => item.id === activeId);
+        if (!existsInCategory) activeId = group.items[0].id;
+        saveState();
+        updateCategoryButtons();
+        renderList();
+        render();
+      });
+    });
+
+    document.getElementById("dhikrBtn").addEventListener("click", increment);
+    document.getElementById("resetBtn").addEventListener("click", resetCurrent);
+    document.getElementById("resetAllBtn").addEventListener("click", resetAll);
+    targetBtn.addEventListener("click", setTarget);
+
+    targetInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") setTarget();
+    });
+
+    document.addEventListener("keydown", event => {
+      const tag = document.activeElement?.tagName;
+      const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
+      if (event.code === "Space" && !typing) {
+        event.preventDefault();
+        increment();
+      }
+    });
+
+    const current = getItem(activeId);
+    if (current.category !== activeCategory) activeCategory = current.category;
+    updateCategoryButtons();
+    renderList();
+    render();
+  </script>
+</body>
+</html>
